@@ -1,0 +1,47 @@
+{
+  "name": "smart-context",
+  "displayName": "Smart Context",
+  "description": "Copies all text files from a selected folder to clipboard, respecting .gitignore.",
+  "version": "1.0.0",
+  "publisher": "🌴 Brian",
+  "repository": "https://github.com/brianpetro/smart-context-vscode",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "AI"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./src/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "smartContext.copyFolderContents",
+        "title": "Smart Context: Copy folder contents to clipboard",
+        "category": "Smart Context"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "smartContext.copyFolderContents",
+          "when": "explorerResourceIsFolder",
+          "group": "navigation@2"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "lint": "eslint src/**/*.js",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "ignore": "^5.2.0"
+  },
+  "devDependencies": {
+    "eslint": "^7.32.0",
+    "vsce": "^2.15.0"
+  }
+}
