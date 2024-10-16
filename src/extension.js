@@ -92,10 +92,14 @@ function activate(context) {
                     '.c', '.cpp', '.cs', '.xml', '.yml', '.yaml', '.ini', '.cfg', '.conf',
                     '.log', '.sh', '.bat', '.rb', '.php', '.go', '.rs', '.swift', '.pl',
                     '.sql', '.r', '.tex', '.jsx', '.tsx', '.csv', '.mdx', '.scss', '.less',
-                    '.vue', '.svelte', '.dart', '.kt', '.m', '.makefile', '.gradle', '.groovy'
+                    '.vue', '.svelte', '.dart', '.kt', '.m', '.makefile', '.gradle', '.groovy',
+                    '.ejs', '.properties', '.twig', '.sass', '.lua', '.pas', '.scala', '.elm',
+                    '.h', '.hpp', '.asm', '.lisp', '.scheme', '.tcl', '.erl', '.hs', '.ml',
+                    '.clj', '.vb', '.f', '.d', '.jade', '.pug', '.tpl', '.hbs', '.mustache'
                 ];
                 return text_file_extensions.includes(path.extname(file_name).toLowerCase());
             }
+            
 
             const text_files = get_all_text_files(folderPath);
 
