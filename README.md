@@ -22,7 +22,7 @@ Quickly copy entire folders to your clipboard, respecting .gitignore, for use in
 2. **Select Command**: Choose **"Smart Context: Copy Folder Contents to Clipboard"**.
 3. **Paste**: Paste the concatenated file contents, including relative paths, wherever needed.
 
-![](./assets/smart-context-menu.png)
+![](./assets/smart-context-vscode-menu.png)
 
 Alternatively:
 - Open the Command Palette (Ctrl+Shift+P or Cmd+Shift+P).
