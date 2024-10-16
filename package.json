@@ -4,7 +4,10 @@
   "description": "Copies all text files from a selected folder to clipboard, respecting .gitignore.",
   "version": "1.0.0",
   "publisher": "🌴 Brian",
-  "repository": "https://github.com/brianpetro/smart-context-vscode",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/brianpetro/smart-context-vscode"
+  },
   "engines": {
     "vscode": "^1.60.0"
   },
