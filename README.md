@@ -49,4 +49,4 @@ This project is licensed under the MIT License. See the [LICENSE](./MIT_LICENSE)
 
 ## Author
 
-🌴 Brian
+**🌴 Brian** is the creator of Smart Context for VS Code. He’s passionate about building tools that empower individuals while keeping privacy at the forefront. Follow his updates on Twitter at [@wfhbrian](https://x.com/wfhbrian).
