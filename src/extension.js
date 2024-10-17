@@ -68,25 +68,51 @@ function activate(context) {
             }
 
             // Function to recursively get all text files
-            function get_all_text_files(dir) {
+            function get_all_text_files(dir, base_path) {
                 let results = [];
                 const list = fs.readdirSync(dir);
                 for (let file of list) {
-                    file = path.resolve(dir, file);
-                    const relative_path = path.relative(folderPath, file);
+                    const full_path = path.join(dir, file);
+                    const relative_path = path.relative(base_path, full_path);
+                    
                     if (gitignore.ignores(relative_path)) {
+                        console.log(`Ignoring file/folder: ${relative_path}`);
                         continue;
                     }
-                    const stat = fs.statSync(file);
+
+                    const stat = fs.statSync(full_path);
                     if (stat && stat.isDirectory()) {
-                        results = results.concat(get_all_text_files(file));
-                    } else {
-                        if (is_text_file(file)) {
-                            results.push(file);
-                        }
+                        console.log(`Entering subfolder: ${relative_path}`);
+                        results = results.concat(get_all_text_files(full_path, base_path));
+                    } else if (is_text_file(full_path)) {
+                        console.log(`Adding file: ${relative_path}`);
+                        results.push(full_path);
                     }
                 }
                 return results;
+            }
+
+            // Function to generate folder structure
+            function generate_folder_structure(dir, prefix = '') {
+                let structure = '';
+                const list = fs.readdirSync(dir);
+                list.forEach((file, index) => {
+                    const full_path = path.join(dir, file);
+                    const relative_path = path.relative(folderPath, full_path);
+                    
+                    if (gitignore.ignores(relative_path)) {
+                        return;
+                    }
+
+                    const is_last = index === list.length - 1;
+                    const connector = is_last ? '└── ' : '├── ';
+                    structure += `${prefix}${connector}${file}\n`;
+
+                    if (fs.statSync(full_path).isDirectory()) {
+                        structure += generate_folder_structure(full_path, prefix + (is_last ? '    ' : '│   '));
+                    }
+                });
+                return structure;
             }
 
             // Check for text file extensions
@@ -105,24 +131,30 @@ function activate(context) {
             }
             
 
-            const text_files = get_all_text_files(folderPath);
+            console.log(`Starting to gather text files from: ${folderPath}`);
+            const text_files = get_all_text_files(folderPath, folderPath);
+            console.log(`Found ${text_files.length} text files`);
 
             if (text_files.length === 0) {
-                vscode.window.showInformationMessage("No text files found in the selected folder.");
+                vscode.window.showInformationMessage("No text files found in the selected folder and its subfolders.");
                 return;
             }
 
-            let content_to_copy = '';
+            // Generate folder structure
+            const folder_structure = generate_folder_structure(folderPath);
+
+            let content_to_copy = `Folder Structure:\n${folder_structure}\n`;
+            content_to_copy += 'File Contents:\n';
 
             for (const file_path of text_files) {
                 const file_content = fs.readFileSync(file_path, 'utf8');
                 const relative_file_path = path.relative(folderPath, file_path);
-                content_to_copy += `/${relative_file_path}:\n-----------------------\n${file_content}\n-----------------------\n\n`;
+                content_to_copy += `----------------------\n/${relative_file_path.replace(/\\/g, '/')}\n-----------------------\n${file_content}\n-----------------------\n\n`;
             }
 
             // Copy to clipboard
             await vscode.env.clipboard.writeText(content_to_copy);
-            vscode.window.showInformationMessage("Folder contents copied to clipboard!");
+            vscode.window.showInformationMessage(`Folder contents and structure copied to clipboard! (${text_files.length} files)`);
         } catch (error) {
             vscode.window.showErrorMessage("Failed to copy folder contents: " + error.message);
         }
