@@ -55,12 +55,16 @@ function activate(context) {
         }
 
         try {
-            // Read .gitignore file if exists
-            let gitignore = null;
-            const gitignorePath = path.join(folderPath, '.gitignore');
-            if (fs.existsSync(gitignorePath)) {
-                const gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
-                gitignore = ignore().add(gitignoreContent);
+            // Read .gitignore files from the current folder and its parents
+            let gitignore = ignore();
+            let current_dir = folderPath;
+            while (current_dir !== path.parse(current_dir).root) {
+                const gitignore_path = path.join(current_dir, '.gitignore');
+                if (fs.existsSync(gitignore_path)) {
+                    const gitignore_content = fs.readFileSync(gitignore_path, 'utf8');
+                    gitignore.add(gitignore_content);
+                }
+                current_dir = path.dirname(current_dir);
             }
 
             // Function to recursively get all text files
@@ -70,7 +74,7 @@ function activate(context) {
                 for (let file of list) {
                     file = path.resolve(dir, file);
                     const relative_path = path.relative(folderPath, file);
-                    if (gitignore && gitignore.ignores(relative_path)) {
+                    if (gitignore.ignores(relative_path)) {
                         continue;
                     }
                     const stat = fs.statSync(file);
