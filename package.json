@@ -24,6 +24,11 @@
         "command": "smartContext.copyFolderContents",
         "title": "Smart Context: Copy folder contents to clipboard",
         "category": "Smart Context"
+      },
+      {
+        "command": "smartContext.copyOpenFilesContents",
+        "title": "Smart Context: Copy open files to clipboard",
+        "category": "Smart Context"
       }
     ],
     "menus": {

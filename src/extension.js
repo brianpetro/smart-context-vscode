@@ -30,7 +30,7 @@ const ignore = require('ignore');
 function activate(context) {
     console.log('Activating Smart Context extension');
 
-    let disposable = vscode.commands.registerCommand('smartContext.copyFolderContents', async (uri) => {
+    let copyFolderDisposable = vscode.commands.registerCommand('smartContext.copyFolderContents', async (uri) => {
         console.log("Command executed with URI:", uri);
 
         if (!uri) {
@@ -160,7 +160,33 @@ function activate(context) {
         }
     });
 
-    context.subscriptions.push(disposable);
+    let copyOpenFilesDisposable = vscode.commands.registerCommand('smartContext.copyOpenFilesContents', async () => {
+        console.log("Copying contents of all open files");
+
+        const editors = vscode.window.visibleTextEditors;
+        if (editors.length === 0) {
+            vscode.window.showInformationMessage("No open files to copy.");
+            return;
+        }
+
+        let content_to_copy = `Open Files Contents:\n`;
+
+        for (const editor of editors) {
+            const document = editor.document;
+            const file_content = document.getText();
+            const file_path = document.fileName;
+            const relative_file_path = vscode.workspace.asRelativePath(file_path);
+            
+            content_to_copy += `----------------------\n/${relative_file_path.replace(/\\/g, '/')}\n-----------------------\n${file_content}\n-----------------------\n\n`;
+        }
+
+        // Copy to clipboard
+        await vscode.env.clipboard.writeText(content_to_copy);
+        vscode.window.showInformationMessage(`Contents of all open files copied to clipboard! (${editors.length} files)`);
+    });
+
+    context.subscriptions.push(copyFolderDisposable);
+    context.subscriptions.push(copyOpenFilesDisposable);
 }
 
 function deactivate() {}
