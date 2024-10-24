@@ -73,6 +73,10 @@ function activate(context) {
                 const list = fs.readdirSync(dir);
                 for (let file of list) {
                     const full_path = path.join(dir, file);
+                    if (is_extraneous_file(file, full_path)) {
+                        continue;
+                    }
+
                     const relative_path = path.relative(base_path, full_path);
                     
                     if (gitignore.ignores(relative_path)) {
@@ -98,6 +102,10 @@ function activate(context) {
                 const list = fs.readdirSync(dir);
                 list.forEach((file, index) => {
                     const full_path = path.join(dir, file);
+                    if (is_extraneous_file(file, full_path)) {
+                        return;
+                    }
+
                     const relative_path = path.relative(folderPath, full_path);
                     
                     if (gitignore.ignores(relative_path)) {
@@ -128,6 +136,13 @@ function activate(context) {
                     '.clj', '.vb', '.f', '.d', '.jade', '.pug', '.tpl', '.hbs', '.mustache'
                 ];
                 return text_file_extensions.includes(path.extname(file_name).toLowerCase());
+            }
+
+            // Function to check for extraneous files and directories
+            function is_extraneous_file(file_name, full_path) {
+                const extraneous_files = ['.gitignore', '.DS_Store'];
+                const extraneous_dirs = ['.git'];
+                return extraneous_files.includes(file_name) || extraneous_dirs.some(dir => full_path.includes(dir));
             }
             
 
