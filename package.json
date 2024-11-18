@@ -2,7 +2,7 @@
   "name": "smart-context",
   "displayName": "Smart Context",
   "description": "Copies all text files from a selected folder to clipboard, respecting .gitignore.",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "publisher": "🌴 Brian",
   "repository": {
     "type": "git",
