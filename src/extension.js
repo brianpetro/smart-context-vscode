@@ -231,7 +231,8 @@ function activate(context) {
             // Generate folder structure
             const folder_structure = generate_folder_structure(folderPath);
 
-            let content_to_copy = `Folder Structure:\n${folder_structure}\n`;
+            const folder_name = path.basename(folderPath);
+            let content_to_copy = `${folder_name} Folder Structure:\n${folder_structure}\n`;
             content_to_copy += 'File Contents:\n';
 
             for (const file_path of text_files) {
