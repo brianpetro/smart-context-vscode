@@ -55,15 +55,24 @@ function activate(context) {
         }
 
         try {
-            // Read .gitignore files from the current folder and its parents
-            let gitignore = ignore();
+            // Read .gitignore and .scignore files from the current folder and its parents
+            let ignore_rules = ignore();
             let current_dir = folderPath;
             while (current_dir !== path.parse(current_dir).root) {
+                // Check for .gitignore
                 const gitignore_path = path.join(current_dir, '.gitignore');
                 if (fs.existsSync(gitignore_path)) {
                     const gitignore_content = fs.readFileSync(gitignore_path, 'utf8');
-                    gitignore.add(gitignore_content);
+                    ignore_rules.add(gitignore_content);
                 }
+                
+                // Check for .scignore
+                const scignore_path = path.join(current_dir, '.scignore');
+                if (fs.existsSync(scignore_path)) {
+                    const scignore_content = fs.readFileSync(scignore_path, 'utf8');
+                    ignore_rules.add(scignore_content);
+                }
+                
                 current_dir = path.dirname(current_dir);
             }
 
@@ -79,7 +88,7 @@ function activate(context) {
 
                     const relative_path = path.relative(base_path, full_path);
                     
-                    if (gitignore.ignores(relative_path)) {
+                    if (ignore_rules.ignores(relative_path)) {
                         console.log(`Ignoring file/folder: ${relative_path}`);
                         continue;
                     }
@@ -108,7 +117,7 @@ function activate(context) {
 
                     const relative_path = path.relative(folderPath, full_path);
                     
-                    if (gitignore.ignores(relative_path)) {
+                    if (ignore_rules.ignores(relative_path)) {
                         return;
                     }
 
@@ -204,7 +213,7 @@ function activate(context) {
 
             // Function to check for extraneous files and directories
             function is_extraneous_file(file_name, full_path) {
-                const extraneous_files = ['.gitignore', '.DS_Store'];
+                const extraneous_files = ['.gitignore', '.scignore', '.DS_Store'];
                 const extraneous_dirs = ['.git'];
                 return extraneous_files.includes(file_name) || extraneous_dirs.some(dir => full_path.includes(dir));
             }
