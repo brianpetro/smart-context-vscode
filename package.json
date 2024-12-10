@@ -29,6 +29,16 @@
         "command": "smartContext.copyOpenFilesContents",
         "title": "Smart Context: Copy open files to clipboard",
         "category": "Smart Context"
+      },
+      {
+        "command": "smartContext.copyFolderContentsMin",
+        "title": "Smart Context: Copy minimized folder contents to clipboard",
+        "category": "Smart Context"
+      },
+      {
+        "command": "smartContext.copyOpenFilesContentsMin",
+        "title": "Smart Context: Copy minimized open files to clipboard",
+        "category": "Smart Context"
       }
     ],
     "menus": {
@@ -37,6 +47,11 @@
           "command": "smartContext.copyFolderContents",
           "when": "explorerResourceIsFolder",
           "group": "navigation@2"
+        },
+        {
+          "command": "smartContext.copyFolderContentsMin",
+          "when": "explorerResourceIsFolder",
+          "group": "navigation@3"
         }
       ]
     }
