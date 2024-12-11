@@ -23,7 +23,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import ignore from 'ignore';
-import { strip_logic_from_content } from './strip_logic_from_content.js';
+import { strip_logic_from_content } from './strip_logic_from_content.mjs';
 
 /**
  * @param {vscode.ExtensionContext} context

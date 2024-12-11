@@ -15,10 +15,11 @@ import path from 'path';
 (async function run_build() {
     try {
         await build({
-            entryPoints: [path.join('.', 'src', 'extension.js')],
+            entryPoints: [path.join('.', 'src', 'extension.mjs')],
             bundle: true,
             platform: 'node',
-            target: 'node12',
+            format: 'cjs',
+            target: 'node18',
             outfile: path.join('.', 'dist', 'extension.js'),
             external: ['vscode']
         });
