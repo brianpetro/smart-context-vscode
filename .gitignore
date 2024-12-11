@@ -19,3 +19,6 @@ yarn-error.log*
 
 # Coverage reports
 coverage/
+
+# vscode packages
+*.vsix
