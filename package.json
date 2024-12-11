@@ -3,6 +3,7 @@
   "displayName": "Smart Context",
   "description": "Copies all text files from a selected folder to clipboard, respecting .gitignore.",
   "version": "1.0.8",
+  "type": "module",
   "publisher": "🌴 Brian",
   "repository": {
     "type": "git",
@@ -17,27 +18,37 @@
   "activationEvents": [
     "onStartupFinished"
   ],
-  "main": "./src/extension.js",
+  "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
         "command": "smartContext.copyFolderContents",
-        "title": "Smart Context: Copy folder contents to clipboard",
+        "title": "Copy folder contents to clipboard",
         "category": "Smart Context"
       },
       {
         "command": "smartContext.copyOpenFilesContents",
-        "title": "Smart Context: Copy open files to clipboard",
+        "title": "Copy open files to clipboard",
         "category": "Smart Context"
       },
       {
         "command": "smartContext.copyFolderContentsMin",
-        "title": "Smart Context: Copy minimized folder contents to clipboard",
+        "title": "Copy minimized folder contents to clipboard",
         "category": "Smart Context"
       },
       {
         "command": "smartContext.copyOpenFilesContentsMin",
-        "title": "Smart Context: Copy minimized open files to clipboard",
+        "title": "Copy minimized open files to clipboard",
+        "category": "Smart Context"
+      },
+      {
+        "command": "smartContext.stripLogicFromMethods",
+        "title": "Copy with logic stripped from methods (folder)",
+        "category": "Smart Context"
+      },
+      {
+        "command": "smartContext.stripLogicFromMethodsOpenFiles",
+        "title": "Copy with logic stripped from methods (open files)",
         "category": "Smart Context"
       }
     ],
@@ -52,19 +63,33 @@
           "command": "smartContext.copyFolderContentsMin",
           "when": "explorerResourceIsFolder",
           "group": "navigation@3"
+        },
+        {
+          "command": "smartContext.stripLogicFromMethods",
+          "when": "explorerResourceIsFolder",
+          "group": "navigation@4"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "smartContext.stripLogicFromMethodsOpenFiles",
+          "when": "editorTextFocus",
+          "group": "navigation@4"
         }
       ]
     }
   },
   "scripts": {
     "lint": "eslint src/**/*.js",
-    "package": "vsce package"
+    "build": "node ./esbuild.js",
+    "package": "npm run build && vsce package"
   },
   "dependencies": {
     "ignore": "^5.2.0"
   },
   "devDependencies": {
     "eslint": "^7.32.0",
-    "vsce": "^2.15.0"
+    "vsce": "^2.15.0",
+    "esbuild": "^0.19.3"
   }
 }
