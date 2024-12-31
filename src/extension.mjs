@@ -22,8 +22,9 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import ignore from 'ignore';
 import { strip_logic_from_content } from './strip_logic_from_content.mjs';
+
+import { load_ignore_patterns, should_ignore } from '../../jsbrains/smart-fs/utils/ignore_utility.js';
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -71,6 +72,13 @@ export function activate(context) {
     context.subscriptions.push(strip_logic_open_files_disposable);
 }
 
+export function deactivate() {}
+
+/**
+ * Copy the contents of a folder to clipboard, optionally minifying the content.
+ * @param {vscode.Uri|undefined} uri
+ * @param {boolean} minify
+ */
 async function copy_folder_contents(uri, minify) {
     if (!uri || !uri.fsPath) {
         uri = await vscode.window.showOpenDialog({
@@ -94,26 +102,11 @@ async function copy_folder_contents(uri, minify) {
     }
 
     try {
-        let ignore_rules = ignore();
-        let current_dir = folder_path;
-        while (current_dir !== path.parse(current_dir).root) {
-            const gitignore_path = path.join(current_dir, '.gitignore');
-            if (fs.existsSync(gitignore_path)) {
-                const gitignore_content = fs.readFileSync(gitignore_path, 'utf8');
-                ignore_rules.add(gitignore_content);
-            }
-            
-            const scignore_path = path.join(current_dir, '.scignore');
-            if (fs.existsSync(scignore_path)) {
-                const scignore_content = fs.readFileSync(scignore_path, 'utf8');
-                ignore_rules.add(scignore_content);
-            }
-            
-            current_dir = path.dirname(current_dir);
-        }
+        // Gather all ignore patterns from this folder up to the root
+        const ignore_patterns = load_ignore_patterns(folder_path);
 
         console.log(`Starting to gather text files from: ${folder_path}`);
-        const text_files = get_all_text_files(folder_path, folder_path, ignore_rules);
+        const text_files = get_all_text_files(folder_path, folder_path, ignore_patterns);
         console.log(`Found ${text_files.length} text files`);
 
         if (text_files.length === 0) {
@@ -121,7 +114,7 @@ async function copy_folder_contents(uri, minify) {
             return;
         }
 
-        const folder_structure = generate_folder_structure(folder_path, '', folder_path, ignore_rules);
+        const folder_structure = generate_folder_structure(folder_path, '', folder_path, ignore_patterns);
         const folder_name = path.basename(folder_path);
         let content_to_copy = `${folder_name} Folder Structure:\n${folder_structure}\n`;
         content_to_copy += minify ? 'File Contents (Minified):\n' : 'File Contents:\n';
@@ -140,6 +133,10 @@ async function copy_folder_contents(uri, minify) {
     }
 }
 
+/**
+ * Copy the contents of all currently visible text editors to clipboard.
+ * @param {boolean} minify
+ */
 async function copy_open_files(minify) {
     const editors = vscode.window.visibleTextEditors;
     if (editors.length === 0) {
@@ -163,6 +160,10 @@ async function copy_open_files(minify) {
     vscode.window.showInformationMessage(`Contents of all open files ${minify ? "(minified) " : ""}copied to clipboard! (${editors.length} files)`);
 }
 
+/**
+ * Strip logic from methods in a folder's files.
+ * @param {vscode.Uri|undefined} uri
+ */
 async function strip_logic_from_folder_methods(uri) {
     if (!uri || !uri.fsPath) {
         uri = await vscode.window.showOpenDialog({
@@ -186,26 +187,11 @@ async function strip_logic_from_folder_methods(uri) {
     }
 
     try {
-        let ignore_rules = ignore();
-        let current_dir = folder_path;
-        while (current_dir !== path.parse(current_dir).root) {
-            const gitignore_path = path.join(current_dir, '.gitignore');
-            if (fs.existsSync(gitignore_path)) {
-                const gitignore_content = fs.readFileSync(gitignore_path, 'utf8');
-                ignore_rules.add(gitignore_content);
-            }
-            
-            const scignore_path = path.join(current_dir, '.scignore');
-            if (fs.existsSync(scignore_path)) {
-                const scignore_content = fs.readFileSync(scignore_path, 'utf8');
-                ignore_rules.add(scignore_content);
-            }
-            
-            current_dir = path.dirname(current_dir);
-        }
+        // Gather ignore patterns
+        const ignore_patterns = load_ignore_patterns(folder_path);
 
         console.log(`Starting to gather text files for logic stripping from: ${folder_path}`);
-        const text_files = get_all_text_files(folder_path, folder_path, ignore_rules);
+        const text_files = get_all_text_files(folder_path, folder_path, ignore_patterns);
         console.log(`Found ${text_files.length} text files`);
 
         if (text_files.length === 0) {
@@ -213,7 +199,7 @@ async function strip_logic_from_folder_methods(uri) {
             return;
         }
 
-        const folder_structure = generate_folder_structure(folder_path, '', folder_path, ignore_rules);
+        const folder_structure = generate_folder_structure(folder_path, '', folder_path, ignore_patterns);
         const folder_name = path.basename(folder_path);
         let content_to_copy = `${folder_name} Folder Structure:\n${folder_structure}\nStripped Methods (Logic Removed):\n`;
 
@@ -231,6 +217,9 @@ async function strip_logic_from_folder_methods(uri) {
     }
 }
 
+/**
+ * Strip logic from methods in all currently visible text editors.
+ */
 async function strip_logic_from_open_files() {
     const editors = vscode.window.visibleTextEditors;
     if (editors.length === 0) {
@@ -254,18 +243,24 @@ async function strip_logic_from_open_files() {
     vscode.window.showInformationMessage(`Methods in open files stripped of logic and copied to clipboard! (${editors.length} files)`);
 }
 
-function get_all_text_files(dir, base_path, ignore_rules) {
+/**
+ * Recursively gather all text files from a directory, skipping those that match any ignore pattern.
+ * @param {string} dir - Current directory being processed.
+ * @param {string} base_path - The top-level path to relativize.
+ * @param {string[]} ignore_patterns - The loaded ignore patterns from the utility.
+ * @returns {string[]} An array of absolute paths to text files.
+ */
+function get_all_text_files(dir, base_path, ignore_patterns) {
     let results = [];
     const list = fs.readdirSync(dir);
     for (let file of list) {
         const full_path = path.join(dir, file);
-        if (is_extraneous_file(file, full_path)) {
-            continue;
-        }
 
-        const relative_path = path.relative(base_path, full_path);
-        
-        if (ignore_rules.ignores(relative_path)) {
+        // Build the relative path (for ignoring)
+        const relative_path = path.relative(base_path, full_path).replace(/\\/g, '/');
+
+        // Check if we skip
+        if (should_ignore(relative_path, ignore_patterns) || is_extraneous_file(file, full_path)) {
             console.log(`Ignoring file/folder: ${relative_path}`);
             continue;
         }
@@ -273,7 +268,7 @@ function get_all_text_files(dir, base_path, ignore_rules) {
         const stat = fs.statSync(full_path);
         if (stat && stat.isDirectory()) {
             console.log(`Entering subfolder: ${relative_path}`);
-            results = results.concat(get_all_text_files(full_path, base_path, ignore_rules));
+            results = results.concat(get_all_text_files(full_path, base_path, ignore_patterns));
         } else if (is_text_file(full_path)) {
             console.log(`Adding file: ${relative_path}`);
             results.push(full_path);
@@ -282,18 +277,22 @@ function get_all_text_files(dir, base_path, ignore_rules) {
     return results;
 }
 
-function generate_folder_structure(dir, prefix, base_path, ignore_rules) {
+/**
+ * Generate an ASCII folder structure, skipping ignored files/folders.
+ * @param {string} dir
+ * @param {string} prefix
+ * @param {string} base_path
+ * @param {string[]} ignore_patterns
+ * @returns {string} ASCII-art style representation of the folder tree.
+ */
+function generate_folder_structure(dir, prefix, base_path, ignore_patterns) {
     let structure = '';
     const list = fs.readdirSync(dir);
+
     list.forEach((file, index) => {
         const full_path = path.join(dir, file);
-        if (is_extraneous_file(file, full_path)) {
-            return;
-        }
-
-        const relative_path = path.relative(base_path, full_path);
-        
-        if (ignore_rules.ignores(relative_path)) {
+        const relative_path = path.relative(base_path, full_path).replace(/\\/g, '/');
+        if (should_ignore(relative_path, ignore_patterns) || is_extraneous_file(file, full_path)) {
             return;
         }
 
@@ -302,29 +301,54 @@ function generate_folder_structure(dir, prefix, base_path, ignore_rules) {
         structure += `${prefix}${connector}${file}\n`;
 
         if (fs.statSync(full_path).isDirectory()) {
-            structure += generate_folder_structure(full_path, prefix + (is_last ? '    ' : '│   '), base_path, ignore_rules);
+            structure += generate_folder_structure(
+                full_path,
+                prefix + (is_last ? '    ' : '│   '),
+                base_path,
+                ignore_patterns
+            );
         }
     });
     return structure;
 }
 
+/**
+ * Determine if a file is a text file by extension.
+ * @param {string} file_name
+ * @returns {boolean}
+ */
 function is_text_file(file_name) {
     const text_file_extensions = [
-        '.asm', '.bat', '.c', '.cfg', '.clj', '.conf', '.cpp', '.cs', '.css', '.csv', '.d', '.dart', '.ejs', '.elm', '.erl', '.f',
-        '.go', '.gradle', '.groovy', '.h', '.hbs', '.hpp', '.hs', '.html', '.ini', '.jade', '.java', '.js', '.json', '.jsx', '.kt',
-        '.less', '.lisp', '.log', '.lua', '.m', '.makefile', '.md', '.mdx', '.ml', '.mjs', '.mustache', '.pas', '.php', '.pl',
-        '.properties', '.pug', '.py', '.r', '.rb', '.rs', '.sass', '.scala', '.scheme', '.scss', '.sh', '.sql', '.svelte', '.swift',
-        '.tcl', '.tex', '.tpl', '.ts', '.tsx', '.twig', '.txt', '.vb', '.vue', '.xml', '.yaml', '.yml'
+        '.asm', '.bat', '.c', '.cfg', '.clj', '.conf', '.cpp', '.cs', '.css', '.csv', '.d', '.dart', '.ejs', '.elm',
+        '.erl', '.f', '.go', '.gradle', '.groovy', '.h', '.hbs', '.hpp', '.hs', '.html', '.ini', '.jade', '.java',
+        '.js', '.json', '.jsx', '.kt', '.less', '.lisp', '.log', '.lua', '.m', '.makefile', '.md', '.mdx', '.ml',
+        '.mjs', '.mustache', '.pas', '.php', '.pl', '.properties', '.pug', '.py', '.r', '.rb', '.rs', '.sass',
+        '.scala', '.scheme', '.scss', '.sh', '.sql', '.svelte', '.swift', '.tcl', '.tex', '.tpl', '.ts', '.tsx',
+        '.twig', '.txt', '.vb', '.vue', '.xml', '.yaml', '.yml'
     ];
     return text_file_extensions.includes(path.extname(file_name).toLowerCase());
 }
 
+/**
+ * Certain files/folders we always skip, regardless of ignore files.
+ * @param {string} file_name
+ * @param {string} full_path
+ * @returns {boolean}
+ */
 function is_extraneous_file(file_name, full_path) {
     const extraneous_files = ['.gitignore', '.scignore', '.DS_Store'];
     const extraneous_dirs = ['.git'];
-    return extraneous_files.includes(file_name) || extraneous_dirs.some(dir => full_path.includes(dir));
+    if (extraneous_files.includes(file_name)) {
+        return true;
+    }
+    return extraneous_dirs.some(dir => full_path.includes(dir));
 }
 
+/**
+ * Minify file content by removing comments and extraneous whitespace.
+ * @param {string} content
+ * @returns {string}
+ */
 function minify_content(content) {
     // Remove block comments
     content = content.replace(/\/\*[\s\S]*?\*\//g, '');
@@ -344,5 +368,3 @@ function minify_content(content) {
     }
     return processed_lines.join('\n');
 }
-
-export function deactivate() {}
