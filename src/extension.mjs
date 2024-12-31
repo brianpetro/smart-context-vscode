@@ -24,7 +24,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { strip_logic_from_content } from './strip_logic_from_content.mjs';
 
-import { load_ignore_patterns, should_ignore } from '../../jsbrains/smart-fs/utils/ignore_utility.js';
+import {
+    load_ignore_patterns,
+    should_ignore,
+    is_text_file
+} from '../../jsbrains/smart-fs/utils/ignore_utility.js';
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -310,23 +314,6 @@ function generate_folder_structure(dir, prefix, base_path, ignore_patterns) {
         }
     });
     return structure;
-}
-
-/**
- * Determine if a file is a text file by extension.
- * @param {string} file_name
- * @returns {boolean}
- */
-function is_text_file(file_name) {
-    const text_file_extensions = [
-        '.asm', '.bat', '.c', '.cfg', '.clj', '.conf', '.cpp', '.cs', '.css', '.csv', '.d', '.dart', '.ejs', '.elm',
-        '.erl', '.f', '.go', '.gradle', '.groovy', '.h', '.hbs', '.hpp', '.hs', '.html', '.ini', '.jade', '.java',
-        '.js', '.json', '.jsx', '.kt', '.less', '.lisp', '.log', '.lua', '.m', '.makefile', '.md', '.mdx', '.ml',
-        '.mjs', '.mustache', '.pas', '.php', '.pl', '.properties', '.pug', '.py', '.r', '.rb', '.rs', '.sass',
-        '.scala', '.scheme', '.scss', '.sh', '.sql', '.svelte', '.swift', '.tcl', '.tex', '.tpl', '.ts', '.tsx',
-        '.twig', '.txt', '.vb', '.vue', '.xml', '.yaml', '.yml'
-    ];
-    return text_file_extensions.includes(path.extname(file_name).toLowerCase());
 }
 
 /**
